@@ -54,9 +54,8 @@ if menu == "戦略チャットボット":
                         st.chat_message("assistant").markdown(strategy)
 
                         # X共有ボタン
-                        share_text = f"{symbol}戦略概要：{strategy[:90]}...\n#テクニカル分析 #CFD #{symbol.replace(' ', '')} #LazyTech"
-                        tweet_url = f"https://twitter.com/intent/tweet?text={share_text}"
-                        st.markdown(f"[🕊 Xでシェアする]({tweet_url})", unsafe_allow_html=True)
+                        st.button("Xで共有する")
+                        
 
 # ===== ポジションサイズ計算 =====
 elif menu == "ポジションサイズ計算":

@@ -6,6 +6,7 @@ def load_strategy_chain(api_key: str):
     prompt_template = """
 あなたはプロのテクニカルトレーダーです。
 以下のテクニカル指標に基づいて、{symbol} の今後1週間の戦略を生成してください：
+尚、指標は最新のものを使用し、ショート・ロングの両方の戦略を考慮してください。
 
 - MACD: {macd}
 - RSI: {rsi}
