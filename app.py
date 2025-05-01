@@ -53,6 +53,10 @@ if menu == "戦略チャットボット":
 
                         st.chat_message("assistant").markdown(strategy)
 
+                        # 🔽 免責事項を明記
+                        disclaimer = "\n\n---\n※本戦略はAIによるテクニカル分析結果に基づいて生成されたものであり、投資判断の最終決定はご自身の責任で行ってください。本サービスは投資助言ではありません。"
+                        st.markdown(disclaimer)
+
                         # X共有ボタン
                         st.button("Xで共有する")
                         
