@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 from indicators import calculate_indicators
-from strategy_chain import load_strategy_chain
+from strategy_chain import load_strategy_chain, load_summary_chain
 
 # OpenAI APIキーの取得
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY")
@@ -16,7 +16,8 @@ menu = st.sidebar.radio("メニューを選択", ["戦略チャットボット",
 if menu == "戦略チャットボット":
     symbol = st.text_input("銘柄名を入力（例：S&P500、日経225など）", value="S&P500")
     uploaded_file = st.file_uploader("📄 90日以上の株価CSVファイルをアップロード", type=["csv"])
-    
+    st.markdown('CSVファイルはこちらのサイトからダウンロードできます [investing.com](https://jp.investing.com/markets/)')  
+
     if uploaded_file:
         df = pd.read_csv(uploaded_file)
         if len(df) < 90:
@@ -52,6 +53,17 @@ if menu == "戦略チャットボット":
                         })
 
                         st.chat_message("assistant").markdown(strategy)
+                        if st.button("Xで共有する"):
+                            with st.spinner("要約を生成中..."):
+                                summary_chain = load_summary_chain(api_key=OPENAI_API_KEY)
+                                summary = summary_chain.run({"strategy": strategy})
+
+                            hashtags = "#テクニカル分析 #CFD #LazyTech"
+                            tweet_text = f"{summary}\n{hashtags}"
+                            tweet_url = f"https://twitter.com/intent/tweet?text={tweet_text}"
+
+                            st.markdown(f"[🕊 Xで投稿リンクを開く]({tweet_url})", unsafe_allow_html=True)
+
 
                         # 🔽 免責事項を明記
                         disclaimer = "\n\n---\n※本戦略はAIによるテクニカル分析結果に基づいて生成されたものであり、投資判断の最終決定はご自身の責任で行ってください。本サービスは投資助言ではありません。"
