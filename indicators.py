@@ -3,16 +3,10 @@ import pandas as pd
 def calculate_indicators(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
-    # 日本語列名の補正（必要な場合）
     rename_map = {
-        '日付': 'Date',
-        '日付け': 'Date',
-        '終値': 'Close',
-        '始値': 'Open',
-        '高値': 'High',
-        '安値': 'Low',
-        '出来高': 'Volume',
-        '変化率 %': 'Change %'
+        '日付': 'Date', '日付け': 'Date', '終値': 'Close',
+        '始値': 'Open', '高値': 'High', '安値': 'Low',
+        '出来高': 'Volume', '変化率 %': 'Change %'
     }
     df.rename(columns={col: rename_map.get(col, col) for col in df.columns}, inplace=True)
 
