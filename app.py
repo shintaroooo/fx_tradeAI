@@ -3,9 +3,9 @@ import pandas as pd
 import os
 import urllib.parse
 import yfinance as yf
-from indicators import calculate_indicators  # Adjusted to absolute import
-from strategy_chain import load_strategy_chain  # Adjusted to absolute import
-from summary_chain import load_summary_chain  # Adjusted to absolute import
+from utils.indicators import calculate_indicators
+from chains.strategy_chain import load_strategy_chain
+from chains.summary_chain import load_summary_chain
 
 # APIキー取得
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY")
@@ -18,18 +18,18 @@ menu = st.sidebar.radio("メニューを選択", ["戦略チャットボット",
 # ===== 戦略チャットボット =====
 if menu == "戦略チャットボット":
     symbol_options = {
-    "S&P500（米国）": "^GSPC",
-    "日経平均（日本）": "^N225",
-    "NASDAQ100（米国）": "^NDX",
-    "USD/JPY（ドル円）": "JPY=X",
-    "EUR/USD（ユーロドル）": "EURUSD=X"
-}
-symbol_label = st.selectbox("銘柄を選択（または直接入力も可能）", list(symbol_options.keys()))
-default_symbol = symbol_options[symbol_label]
-symbol = st.text_input("銘柄コード（Yahoo Finance形式）", value=default_symbol)
-use_yfinance = st.checkbox("📡 Yahoo Financeから自動取得する", value=True)
+        "S&P500（米国）": "^GSPC",
+        "日経平均（日本）": "^N225",
+        "NASDAQ100（米国）": "^NDX",
+        "USD/JPY（ドル円）": "JPY=X",
+        "EUR/USD（ユーロドル）": "EURUSD=X"
+    }
+    symbol_label = st.selectbox("銘柄を選択（または直接入力も可能）", list(symbol_options.keys()))
+    default_symbol = symbol_options[symbol_label]
+    symbol = st.text_input("銘柄コード（Yahoo Finance形式）", value=default_symbol)
+    use_yfinance = st.checkbox("📡 Yahoo Financeから自動取得する", value=True)
 
-if use_yfinance:
+    if use_yfinance:
         import datetime
         start_date = st.date_input("開始日", datetime.date(2023, 1, 1))
         end_date = st.date_input("終了日", datetime.date.today())
@@ -87,7 +87,7 @@ if use_yfinance:
 
                         st.markdown(f'<a href="{tweet_url}" target="_blank"><button style="background:#1DA1F2;color:white;border:none;padding:0.5em 1em;border-radius:5px;cursor:pointer;">🕊 Xで投稿</button></a>', unsafe_allow_html=True)
 
-else:
+    else:
         uploaded_file = st.file_uploader("📄 90日以上の株価CSVファイルをアップロード", type=["csv"])
         st.markdown('CSVファイルはこちらのサイトからダウンロードできます [investing.com](https://jp.investing.com/markets/)')  
 
@@ -139,18 +139,18 @@ else:
                                 st.markdown(f'<a href="{tweet_url}" target="_blank"><button style="background:#1DA1F2;color:white;border:none;padding:0.5em 1em;border-radius:5px;cursor:pointer;">🕊 Xで投稿</button></a>', unsafe_allow_html=True)
 
 # ===== ポジションサイズ計算 =====
-        elif menu == "ポジションサイズ計算":
-            st.subheader("💰 ポジションサイズ自動計算")
+elif menu == "ポジションサイズ計算":
+    st.subheader("💰 ポジションサイズ自動計算")
 
-symbol = st.text_input("通貨ペア / 銘柄名（任意）", value="S&P500")
-equity = st.number_input("証拠金残高（円）", min_value=10000, step=1000, value=100000)
-risk_pct = st.slider("リスク許容率（％）", min_value=0.5, max_value=10.0, value=2.0, step=0.5)
-stop_loss_pips = st.number_input("損切り幅（pips）", min_value=1.0, value=50.0)
-leverage = st.number_input("レバレッジ倍率", min_value=1.0, value=10.0)
-contract_size = st.number_input("取引単位（通貨数）", min_value=100.0, value=10000.0)
-pip_value = st.number_input("1pipsあたりの円換算額（手動入力）", min_value=0.01, value=1.0)
+    symbol = st.text_input("通貨ペア / 銘柄名（任意）", value="S&P500")
+    equity = st.number_input("証拠金残高（円）", min_value=10000, step=1000, value=100000)
+    risk_pct = st.slider("リスク許容率（％）", min_value=0.5, max_value=10.0, value=2.0, step=0.5)
+    stop_loss_pips = st.number_input("損切り幅（pips）", min_value=1.0, value=50.0)
+    leverage = st.number_input("レバレッジ倍率", min_value=1.0, value=10.0)
+    contract_size = st.number_input("取引単位（通貨数）", min_value=100.0, value=10000.0)
+    pip_value = st.number_input("1pipsあたりの円換算額（手動入力）", min_value=0.01, value=1.0)
 
-if st.button("📊 ポジションサイズを計算"):
+    if st.button("📊 ポジションサイズを計算"):
         risk_amount = equity * (risk_pct / 100)
         position_size = risk_amount / (stop_loss_pips * pip_value)
         notional_value = position_size * contract_size
