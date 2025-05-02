@@ -37,6 +37,12 @@ if menu == "戦略チャットボット":
         if st.button("📊 データ取得 & 分析する", key="analyze_yf"):
             with st.spinner("データ取得中..."):
                 df = yf.download(symbol, start=start_date, end=end_date, interval="1d")
+
+                #デバック用に取得内容を表示
+                st.write("取得対象シンボル:", symbol)
+                st.write("取得期間:", start_date, "~", end_date)
+                st.write("取得結果レビュー:", df.head())
+                
                 if df.empty:
                     st.error("⚠️ データが取得できませんでした。シンボルや日付範囲を確認してください。")
                     st.stop()
