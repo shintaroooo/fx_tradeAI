@@ -3,9 +3,9 @@ import pandas as pd
 import os
 import urllib.parse
 import yfinance as yf
-from indicators import calculate_indicators
-from strategy_chain import load_strategy_chain
-from summary_chain import load_summary_chain
+from indicators import calculate_indicators  # Adjusted to absolute import
+from strategy_chain import load_strategy_chain  # Adjusted to absolute import
+from summary_chain import load_summary_chain  # Adjusted to absolute import
 
 # APIキー取得
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY")
@@ -37,6 +37,9 @@ if use_yfinance:
         if st.button("📊 データ取得 & 分析する", key="analyze_yf"):
             with st.spinner("データ取得中..."):
                 df = yf.download(symbol, start=start_date, end=end_date, interval="1d")
+                if df.empty:
+                    st.error("⚠️ データが取得できませんでした。シンボルや日付範囲を確認してください。")
+                    st.stop()
                 df = df.reset_index()
                 df.rename(columns={"Date": "日付", "Open": "始値", "High": "高値", "Low": "安値", "Close": "終値"}, inplace=True)
 
@@ -121,6 +124,9 @@ else:
                                 "stoch": stoch_text
                             })
 
+                            st.chat_message("assistant").markdown(strategy)
+                            st.markdown("\n\n---\n※本戦略はAIによるテクニカル分析に基づいて自動生成された参考情報であり、投資判断はご自身の責任でお願いします。本サービスは投資助言ではありません。")
+
                             if st.button("Xで共有する", key="x_share_button_csv"):
                                 with st.spinner("要約を生成中..."):
                                     summary_chain = load_summary_chain(api_key=OPENAI_API_KEY)
@@ -131,29 +137,24 @@ else:
                                 tweet_url = f"https://twitter.com/intent/tweet?text={tweet_text}"
 
                                 st.markdown(f'<a href="{tweet_url}" target="_blank"><button style="background:#1DA1F2;color:white;border:none;padding:0.5em 1em;border-radius:5px;cursor:pointer;">🕊 Xで投稿</button></a>', unsafe_allow_html=True)
-                                
-                            st.chat_message("assistant").markdown(strategy)
-                            st.markdown("\n\n---\n※本戦略はAIによるテクニカル分析に基づいて自動生成された参考情報であり、投資判断はご自身の責任でお願いします。本サービスは投資助言ではありません。")
 
 # ===== ポジションサイズ計算 =====
         elif menu == "ポジションサイズ計算":
             st.subheader("💰 ポジションサイズ自動計算")
 
-            symbol = st.text_input("通貨ペア / 銘柄名（任意）", value="S&P500")
-            equity = st.number_input("証拠金残高（円）", min_value=10000, step=1000, value=100000)
-            risk_pct = st.slider("リスク許容率（％）", min_value=0.5, max_value=10.0, value=2.0, step=0.5)
-            stop_loss_pips = st.number_input("損切り幅（pips）", min_value=1.0, value=50.0)
-            leverage = st.number_input("レバレッジ倍率", min_value=1.0, value=10.0)
-            contract_size = st.number_input("取引単位（通貨数）", min_value=100.0, value=10000.0)
-            pip_value = st.number_input("1pipsあたりの円換算額（手動入力）", min_value=0.01, value=1.0)
+symbol = st.text_input("通貨ペア / 銘柄名（任意）", value="S&P500")
+equity = st.number_input("証拠金残高（円）", min_value=10000, step=1000, value=100000)
+risk_pct = st.slider("リスク許容率（％）", min_value=0.5, max_value=10.0, value=2.0, step=0.5)
+stop_loss_pips = st.number_input("損切り幅（pips）", min_value=1.0, value=50.0)
+leverage = st.number_input("レバレッジ倍率", min_value=1.0, value=10.0)
+contract_size = st.number_input("取引単位（通貨数）", min_value=100.0, value=10000.0)
+pip_value = st.number_input("1pipsあたりの円換算額（手動入力）", min_value=0.01, value=1.0)
 
-        if st.button("📊 ポジションサイズを計算"):
-            risk_amount = equity * (risk_pct / 100)
-            contract_size = st.number_input("取引単位（通貨数）", min_value=100.0, value=10000.0)
-            pip_value = st.number_input("1pipsあたりの円換算額（手動入力）", min_value=0.01, value=1.0)
-            position_size = risk_amount / (stop_loss_pips * pip_value)
-            notional_value = position_size * contract_size
-            required_margin = notional_value / leverage
+if st.button("📊 ポジションサイズを計算"):
+        risk_amount = equity * (risk_pct / 100)
+        position_size = risk_amount / (stop_loss_pips * pip_value)
+        notional_value = position_size * contract_size
+        required_margin = notional_value / leverage
 
         st.success(f"✅ 推奨ロット数（{int(contract_size)}通貨単位）: **{round(position_size, 2)}ロット**")
         st.info(f"必要証拠金の目安: 約 **¥{round(required_margin):,}**")
