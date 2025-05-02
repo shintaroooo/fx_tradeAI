@@ -3,9 +3,9 @@ import pandas as pd
 import os
 import urllib.parse
 import yfinance as yf
-from utils.indicators import calculate_indicators
-from chains.strategy_chain import load_strategy_chain
-from chains.summary_chain import load_summary_chain
+from indicators import calculate_indicators
+from strategy_chain import load_strategy_chain
+from summary_chain import load_summary_chain
 
 # APIキー取得
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY")
