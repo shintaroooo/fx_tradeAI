@@ -6,6 +6,9 @@ import yfinance as yf
 from indicators import calculate_indicators
 from strategy_chain import load_strategy_chain
 from summary_chain import load_summary_chain
+import socket  # DNS解決用のモジュールをインポート
+import datetime
+
 
 # APIキー取得
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY")
@@ -30,12 +33,20 @@ if menu == "戦略チャットボット":
     use_yfinance = st.checkbox("📡 Yahoo Financeから自動取得する", value=True)
 
     if use_yfinance:
-        import datetime
         start_date = st.date_input("開始日", datetime.date(2023, 1, 1))
         end_date = st.date_input("終了日", datetime.date.today())
 
         if st.button("📊 データ取得 & 分析する", key="analyze_yf"):
             with st.spinner("データ取得中..."):
+                # yfinance.download() の直前に追加
+                try:
+                    host = "query1.finance.yahoo.com"
+                    socket.gethostbyname(host)
+                    st.success(f"✅ DNS解決成功: {host}")
+                except Exception as e:
+                    st.error(f"❌ DNSエラー: {e}")
+
+                # yfinance.download() のコード
                 df = yf.download(symbol, start=start_date, end=end_date, interval="1d")
 
                 #デバック用に取得内容を表示
