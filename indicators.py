@@ -3,42 +3,48 @@ import pandas as pd
 def calculate_indicators(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
-    rename_map = {
-        '日付': 'Date', '日付け': 'Date', '終値': 'Close',
-        '始値': 'Open', '高値': 'High', '安値': 'Low',
-        '出来高': 'Volume', '変化率 %': 'Change %'
-    }
-    df.rename(columns={col: rename_map.get(col, col) for col in df.columns}, inplace=True)
+    # 列名の前後スペースを除去（念のため）
+    df.columns = df.columns.str.strip()
 
-    df['Date'] = pd.to_datetime(df['Date'])
-    df = df.sort_values('Date')
+    # 日付をdatetime型に変換してソート
+    df['日付'] = pd.to_datetime(df['日付'])
+    df = df.sort_values('日付')
 
-    for col in ['Close', 'Open', 'High', 'Low']:
-        df[col] = df[col].astype(str).str.replace(',', '').astype(float)
+    # 数値列を安全にfloat型へ変換（エラーはNaN）
+    for col in ['終値', '始値', '高値', '安値']:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+        else:
+            raise KeyError(f"列 '{col}' がDataFrameに存在しません。")
 
-    df['SMA_5'] = df['Close'].rolling(window=5).mean()
-    df['SMA_20'] = df['Close'].rolling(window=20).mean()
+    # 単純移動平均
+    df['SMA_5'] = df['終値'].rolling(window=5).mean()
+    df['SMA_20'] = df['終値'].rolling(window=20).mean()
 
-    delta = df['Close'].diff()
+    # RSI（14期間）
+    delta = df['終値'].diff()
     gain = delta.where(delta > 0, 0).rolling(window=14).mean()
     loss = -delta.where(delta < 0, 0).rolling(window=14).mean()
     rs = gain / loss
     df['RSI_14'] = 100 - (100 / (1 + rs))
 
-    ema12 = df['Close'].ewm(span=12, adjust=False).mean()
-    ema26 = df['Close'].ewm(span=26, adjust=False).mean()
+    # MACD
+    ema12 = df['終値'].ewm(span=12, adjust=False).mean()
+    ema26 = df['終値'].ewm(span=26, adjust=False).mean()
     df['MACD'] = ema12 - ema26
     df['MACD_Signal'] = df['MACD'].ewm(span=9, adjust=False).mean()
 
-    mid = df['Close'].rolling(window=20).mean()
-    std = df['Close'].rolling(window=20).std()
+    # ボリンジャーバンド
+    mid = df['終値'].rolling(window=20).mean()
+    std = df['終値'].rolling(window=20).std()
     df['BB_Middle'] = mid
     df['BB_Upper'] = mid + 2 * std
     df['BB_Lower'] = mid - 2 * std
 
-    low14 = df['Low'].rolling(window=14).min()
-    high14 = df['High'].rolling(window=14).max()
-    df['Stoch_K_14_3'] = 100 * (df['Close'] - low14) / (high14 - low14)
+    # ストキャスティクス（%K と %D）
+    low14 = df['安値'].rolling(window=14).min()
+    high14 = df['高値'].rolling(window=14).max()
+    df['Stoch_K_14_3'] = 100 * (df['終値'] - low14) / (high14 - low14)
     df['Stoch_D_14_3'] = df['Stoch_K_14_3'].rolling(window=3).mean()
 
     return df
