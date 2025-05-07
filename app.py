@@ -31,23 +31,23 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# # --- 保存用ロジック ---
-# if "strategy_history" not in st.session_state:
-#     st.session_state.strategy_history = {}
+# --- 保存用ロジック ---
+if "strategy_history" not in st.session_state:
+    st.session_state.strategy_history = {}
 
-# def save_strategy_result(name: str, strategy_text: str):
-#     if name and strategy_text:
-#         st.session_state.strategy_history[name] = strategy_text
-#         st.success(f"✅ '{name}' として保存しました。")
+def save_strategy_result(name: str, strategy_text: str):
+    if name and strategy_text:
+        st.session_state.strategy_history[name] = strategy_text
+        st.success(f"✅ '{name}' として保存しました。")
 
-# def select_saved_strategy():
-#     if st.session_state.strategy_history:
-#         selected_name = st.sidebar.selectbox("📂 保存済み分析結果", list(st.session_state.strategy_history.keys()))
-#         if selected_name:
-#             st.sidebar.markdown("⬇️ 分析結果")
-#             st.sidebar.markdown(st.session_state.strategy_history[selected_name])
-#     else:
-#         st.sidebar.info("保存された分析結果はまだありません。")
+def select_saved_strategy():
+    if st.session_state.strategy_history:
+        selected_name = st.sidebar.selectbox("📂 保存済み分析結果", list(st.session_state.strategy_history.keys()))
+        if selected_name:
+            st.sidebar.markdown("⬇️ 分析結果")
+            st.sidebar.markdown(st.session_state.strategy_history[selected_name])
+    else:
+        st.sidebar.info("保存された分析結果はまだありません。")
 
 
 menu = st.sidebar.radio("メニューを選択", ["戦略チャットボット"])
