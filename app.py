@@ -15,23 +15,40 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY")
 st.set_page_config(page_title="📈 AIテクニカルトレードボット", layout="wide")
 st.title("📈AIテクニカルトレードボット")
 
-#保存済み戦略の履歴をセッションステートに保存
-if "strategy_history" not in st.session_state:
-    st.session_state.strategy_history = {}
+# Google Analyticsの埋め込み
+st.markdown(
+    """
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-M0N2JB9TD2"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
 
-def save_strategy_result(name: str, strategy_text: str):
-    if name and strategy_text:
-        st.session_state.strategy_history[name] = strategy_text
-        st.success(f"✅ '{name}' として保存しました。")
+    gtag('config', 'G-M0N2JB9TD2');
+    </script>
+    """,
+    unsafe_allow_html=True
+)
 
-def select_saved_strategy():
-    if st.session_state.strategy_history:
-        selected_name = st.sidebar.selectbox("📂 保存済み分析結果", list(st.session_state.strategy_history.keys()))
-        if selected_name:
-            st.sidebar.markdown("⬇️ 分析結果")
-            st.sidebar.markdown(st.session_state.strategy_history[selected_name])
-    else:
-        st.sidebar.info("保存された分析結果はまだありません。")
+# # --- 保存用ロジック ---
+# if "strategy_history" not in st.session_state:
+#     st.session_state.strategy_history = {}
+
+# def save_strategy_result(name: str, strategy_text: str):
+#     if name and strategy_text:
+#         st.session_state.strategy_history[name] = strategy_text
+#         st.success(f"✅ '{name}' として保存しました。")
+
+# def select_saved_strategy():
+#     if st.session_state.strategy_history:
+#         selected_name = st.sidebar.selectbox("📂 保存済み分析結果", list(st.session_state.strategy_history.keys()))
+#         if selected_name:
+#             st.sidebar.markdown("⬇️ 分析結果")
+#             st.sidebar.markdown(st.session_state.strategy_history[selected_name])
+#     else:
+#         st.sidebar.info("保存された分析結果はまだありません。")
+
 
 menu = st.sidebar.radio("メニューを選択", ["戦略チャットボット"])
 with st.sidebar:
@@ -108,8 +125,8 @@ if menu == "戦略チャットボット":
                     save_name = st.text_input("分析結果に名前を付けて保存", value=f"{symbol}_{datetime.date.today()}")
                     if st.button("保存する"):
                         save_strategy_result(save_name, strategy)
-                        st.success(f"分析結果を保存しました：{save_name}")
-
+                        # サイドバーの履歴を即時更新
+                        st.experimental_rerun()
 
                     st.markdown("\n\n---\n※本戦略はAIによるテクニカル分析に基づいて自動生成された参考情報であり、投資判断はご自身の責任でお願いします。本サービスは投資助言ではありません。")
 
@@ -151,6 +168,7 @@ if menu == "戦略チャットボット":
 
                     # if st.button("Xで共有する", key="x_share_button_yf"):
                     #     with st.spinner("要約を生成中..."):
+                    #     with st.spinner("要約を生成中..."):
                     #         summary_chain = load_summary_chain(api_key=OPENAI_API_KEY)
                     #         summary = summary_chain.run({"strategy": strategy})
 
@@ -163,51 +181,51 @@ if menu == "戦略チャットボット":
                     #         f'<button style="background:#1DA1F2;color:white;border:none;padding:0.5em 1em;border-radius:5px;cursor:pointer;">🕊 Xで投稿</button></a>',
                     #         unsafe_allow_html=True
                     #     )
-    else:
-        uploaded_file = st.file_uploader("📄 90日以上の株価CSVファイルをアップロード", type=["csv"])
-        st.markdown('CSVファイルはこちらのサイトからダウンロードできます [investing.com](https://jp.investing.com/markets/)')  
+    # else:
+    #     uploaded_file = st.file_uploader("📄 90日以上の株価CSVファイルをアップロード", type=["csv"])
+    #     st.markdown('CSVファイルはこちらのサイトからダウンロードできます [investing.com](https://jp.investing.com/markets/)')  
 
-        if uploaded_file:
-            df = pd.read_csv(uploaded_file)
-            if len(df) < 90:
-                st.error("⚠️ 90日以上のデータが必要です。")
-            else:
-                if st.button("📊 分析する", key="analyze_csv"):
-                    with st.spinner("AIがデータを分析中..."):
-                        df = calculate_indicators(df)
+    #     if uploaded_file:
+    #         df = pd.read_csv(uploaded_file)
+    #         if len(df) < 90:
+    #             st.error("⚠️ 90日以上のデータが必要です。")
+    #         else:
+    #             if st.button("📊 分析する", key="analyze_csv"):
+    #                 with st.spinner("AIがデータを分析中..."):
+    #                     df = calculate_indicators(df)
                         
-                        # dfがNoneの場合のエラーハンドリング
-                        if df is None:
-                            st.error("⚠️ 指標計算に失敗しました。データを確認してください。")
-                            st.stop()
+    #                     # dfがNoneの場合のエラーハンドリング
+    #                     if df is None:
+    #                         st.error("⚠️ 指標計算に失敗しました。データを確認してください。")
+    #                         st.stop()
 
-                        clean_df = df.dropna(subset=[
-                            "RSI_14", "MACD", "MACD_Signal",
-                            "BB_Lower", "Stoch_K_14_3", "Stoch_D_14_3"
-                        ])
-                        if clean_df.empty:
-                            st.error("⚠️ 指標計算に必要なデータが不足しています。")
-                        else:
-                            latest = clean_df.iloc[-1]
+    #                     clean_df = df.dropna(subset=[
+    #                         "RSI_14", "MACD", "MACD_Signal",
+    #                         "BB_Lower", "Stoch_K_14_3", "Stoch_D_14_3"
+    #                     ])
+    #                     if clean_df.empty:
+    #                         st.error("⚠️ 指標計算に必要なデータが不足しています。")
+    #                     else:
+    #                         latest = clean_df.iloc[-1]
 
-                            macd_text = f"MACD: {latest['MACD']:.2f}, Signal: {latest['MACD_Signal']:.2f}"
-                            rsi_text = f"RSI14は{latest['RSI_14']:.1f}"
-                            sma_text = f"SMA5({latest['SMA_5']:.2f}) vs SMA20({latest['SMA_20']:.2f})"
-                            bb_text = f"価格({latest['終値']:.2f})はBB範囲 {latest['BB_Lower']:.2f}〜{latest['BB_Upper']:.2f}"
-                            stoch_text = f"%K: {latest['Stoch_K_14_3']:.1f}, %D: {latest['Stoch_D_14_3']:.1f}"
+    #                         macd_text = f"MACD: {latest['MACD']:.2f}, Signal: {latest['MACD_Signal']:.2f}"
+    #                         rsi_text = f"RSI14は{latest['RSI_14']:.1f}"
+    #                         sma_text = f"SMA5({latest['SMA_5']:.2f}) vs SMA20({latest['SMA_20']:.2f})"
+    #                         bb_text = f"価格({latest['終値']:.2f})はBB範囲 {latest['BB_Lower']:.2f}〜{latest['BB_Upper']:.2f}"
+    #                         stoch_text = f"%K: {latest['Stoch_K_14_3']:.1f}, %D: {latest['Stoch_D_14_3']:.1f}"
 
-                            chain = load_strategy_chain(api_key=OPENAI_API_KEY)
-                            strategy = chain.run({
-                                "symbol": symbol,
-                                "macd": macd_text,
-                                "rsi": rsi_text,
-                                "sma": sma_text,
-                                "bb": bb_text,
-                                "stoch": stoch_text
-                            })
+    #                         chain = load_strategy_chain(api_key=OPENAI_API_KEY)
+    #                         strategy = chain.run({
+    #                             "symbol": symbol,
+    #                             "macd": macd_text,
+    #                             "rsi": rsi_text,
+    #                             "sma": sma_text,
+    #                             "bb": bb_text,
+    #                             "stoch": stoch_text
+    #                         })
 
-                            st.chat_message("assistant").markdown(strategy)
-                            st.markdown("\n\n---\n※本戦略はAIによるテクニカル分析に基づいて自動生成された参考情報であり、投資判断はご自身の責任でお願いします。本サービスは投資助言ではありません。")
+    #                         st.chat_message("assistant").markdown(strategy)
+    #                         st.markdown("\n\n---\n※本戦略はAIによるテクニカル分析に基づいて自動生成された参考情報であり、投資判断はご自身の責任でお願いします。本サービスは投資助言ではありません。")
 
                             # if st.button("Xで共有する", key="x_share_button_csv"):
                             #     with st.spinner("要約を生成中..."):
@@ -237,6 +255,4 @@ if menu == "戦略チャットボット":
 #         position_size = risk_amount / (stop_loss_pips * pip_value)
 #         notional_value = position_size * contract_size
 #         required_margin = notional_value / leverage
-
-#         st.success(f"✅ 推奨ロット数（{int(contract_size)}通貨単位）: **{round(position_size, 2)}ロット**")
 #         st.info(f"必要証拠金の目安: 約 **¥{round(required_margin):,}**")
